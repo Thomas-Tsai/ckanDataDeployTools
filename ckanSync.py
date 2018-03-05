@@ -3,34 +3,33 @@ import os, errno
 import urllib
 import urllib.error
 import urllib.request
+import configparser
+import logging
 from ckanapi import RemoteCKAN
-scidmurl="https://scidm.nchc.org.tw"
-aidmurl="https://aidm.nchc.org.tw"
 ua = 'ckanapiexample/1.0 (+http://example.com/my/website)'
-key = ""
-url = aidmurl
+
+config = configparser.ConfigParser()
+config.sections()
+config.read('ckan.ini')
+key = config['site']['key']
+url = config['site']['url']
+dataRootDir = config['local']['data_root_directory']
+dataSync = config['local']['sync']
+logFile = config['local']['logfile']
+statusFile = config['local']['statusfile']
+metaData = config['local']['metafile']
+
 aiDatasets = {}
-dataRootDir = "datasets"
+
+logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 
 dm = RemoteCKAN(url, user_agent=ua, apikey=key)
-#pkgs = dm.action.package_list()
-# for scidm
-#pkgs = dm.action.organization_show(id="nchc-aidm",include_datasets=True)
-# for aidm
-#pkgs = dm.action.group_show(id="ai",include_datasets=True)
-#print(pkgs)
 
 def retrievePackages():
     pkgs = dm.action.group_show(id="ai",include_datasets=True)
-    #for key,value in pkgs.items():
-    #    print(key,": ",value)
-
     aipkgs = pkgs['packages']
 
     for aipkg in aipkgs:
-        #print("==== package ====")
-        #for key,value in aipkg.items():
-        #    print(key,": ",value)
         dataId = aipkg['id']
         dataName = aipkg['name']
         aiDatasets[dataId] = dataName
@@ -41,30 +40,30 @@ def createDir(name):
             os.makedirs(name)
         except OSError as e:
             if e.errno != errno.EEXIST:
+                logging.error("create %s fail.(%s)!\n", name, str(e))
                 raise
 
 def downloadFile(url, name):
     try:
         urllib.request.urlretrieve(url, name)
     except Exception as e:
-        print(str(e))
+        logging.error("Sync %s to %s error.(%s)\n", url, name, str(e))
 
+if __name__ == '__main__':
 
-createDir(dataRootDir)
-retrievePackages()
+    createDir(dataRootDir)
+    retrievePackages()
 
-for Did,Dname in aiDatasets.items():
-    print(Did,": ",Dname)
-    datasetDir = dataRootDir+"/"+Dname
-    createDir(datasetDir)
-    Dpkg = dm.action.package_show(id=Did)
-    #print(Dpkg)
-    Dresources = Dpkg['resources']
-    for res in Dresources:
-        Rurl = res['url']
-        Rname = res['name']
-        print(Dname,": ",Rname,": ",Rurl)
-        resFile = dataRootDir+"/"+Dname+"/"+Rname
-        downloadFile(Rurl, resFile)
-
-
+    for Did,Dname in aiDatasets.items():
+        print(Did,": ",Dname)
+        datasetDir = dataRootDir+"/"+Dname
+        createDir(datasetDir)
+        Dpkg = dm.action.package_show(id=Did)
+        #print(Dpkg)
+        Dresources = Dpkg['resources']
+        for res in Dresources:
+            Rurl = res['url']
+            Rname = res['name']
+            print(Dname,": ",Rname,": ",Rurl)
+            resFile = dataRootDir+"/"+Dname+"/"+Rname
+            downloadFile(Rurl, resFile)
