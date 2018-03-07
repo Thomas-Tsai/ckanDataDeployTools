@@ -1,4 +1,5 @@
 import json
+import sys
 import os, errno
 import urllib
 import urllib.error
@@ -20,6 +21,7 @@ statusFile = config['local']['statusfile']
 metaData = config['local']['metafile']
 
 aiDatasets = {}
+syncDatasets = {}
 
 logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 
@@ -54,7 +56,19 @@ if __name__ == '__main__':
     createDir(dataRootDir)
     retrievePackages()
 
-    for Did,Dname in aiDatasets.items():
+    pkg = ''
+    if len(sys.argv) > 1:
+        pkg = sys.argv[1]
+
+    if pkg != '':
+        for Did,Dname in aiDatasets.items():
+            if Dname == pkg:
+                syncDatasets[Did] = Dname
+                break
+    else:
+        syncDatasets = aiDatasets
+
+    for Did,Dname in syncDatasets.items():
         print(Did,": ",Dname)
         datasetDir = dataRootDir+"/"+Dname
         createDir(datasetDir)
