@@ -7,6 +7,7 @@ import urllib.request
 import configparser
 import logging
 from ckanapi import RemoteCKAN
+import pkgsCache
 ua = 'ckanapiexample/1.0 (+http://example.com/my/website)'
 
 config = configparser.ConfigParser()
@@ -15,7 +16,7 @@ config.read('ckan.ini')
 key = config['site']['key']
 url = config['site']['url']
 dataRootDir = config['local']['data_root_directory']
-dataSync = config['local']['sync']
+dataSync = config['local'].getboolean('sync')
 logFile = config['local']['logfile']
 statusFile = config['local']['statusfile']
 metaData = config['local']['metafile']
@@ -53,9 +54,10 @@ def downloadFile(url, name):
 
 if __name__ == '__main__':
 
+    md = pkgsCache.packages(metaData)
     createDir(dataRootDir)
     retrievePackages()
-
+ 
     pkg = ''
     if len(sys.argv) > 1:
         pkg = sys.argv[1]
@@ -76,8 +78,16 @@ if __name__ == '__main__':
         #print(Dpkg)
         Dresources = Dpkg['resources']
         for res in Dresources:
-            Rurl = res['url']
-            Rname = res['name']
-            print(Dname,": ",Rname,": ",Rurl)
-            resFile = dataRootDir+"/"+Dname+"/"+Rname
-            downloadFile(Rurl, resFile)
+            #print(res)
+            rUrl = res['url']
+            rName = res['name']
+            rID = res['id']
+            rRevision = res['revision_id']
+            cRevision = md.getRevision(rID)
+            if cRevision == rRevision and dataSync == True:
+                print(Dname,": ",rName,": ",rUrl,"skip")
+            else:
+                print(Dname,": ",rName,": ",rUrl,"downloading")
+                resFile = dataRootDir+"/"+Dname+"/"+rName
+                md.cacheRevision(Did, rID, rRevision)
+                downloadFile(rUrl, resFile)
