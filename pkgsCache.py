@@ -1,6 +1,15 @@
 import sqlite3
 import sys
 import os, errno
+import logging
+import configparser
+
+config = configparser.ConfigParser()
+config.sections()
+config.read('ckan.ini')
+logFile = config['local']['logfile']
+
+logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 
 class packages:
 
@@ -51,24 +60,24 @@ class packages:
     def addPkgData(self, pkgid, rid, revision):
 
         sql = "INSERT INTO synccache(pkgID, resID, resRevision) VALUES ('{0}', '{1}', '{2}')".format(pkgid, rid, revision)
-        print(sql)
+        logging.error(sql)
         self.cursor.execute(sql)
         # Save (commit) the changes
         self.conn.commit()
 
     def getRevision(self, rid):
         sql = "select resRevision from synccache where resID='{0}'".format(rid)
-        print(sql)
+        logging.error(sql)
         self.cursor.execute(sql)
         vRow = self.cursor.fetchone()
-        print(vRow)
+        logging.error(vRow)
         if vRow is None:
             return 0
         return vRow[0]
 
     def updateRevision(self, rid, revision):
         sql = "UPDATE synccache SET resRevision='{1}' where resID='{0}'".format(rid, revision)
-        print(sql)
+        logging.error(sql)
         self.cursor.execute(sql)
         self.conn.commit()
 

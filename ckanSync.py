@@ -15,6 +15,7 @@ config.sections()
 config.read('ckan.ini')
 key = config['site']['key']
 url = config['site']['url']
+datasetList = config['dataset']['group']
 dataRootDir = config['local']['data_root_directory']
 dataSync = config['local'].getboolean('sync')
 logFile = config['local']['logfile']
@@ -29,7 +30,7 @@ logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 dm = RemoteCKAN(url, user_agent=ua, apikey=key)
 
 def retrievePackages():
-    pkgs = dm.action.group_show(id="ai",include_datasets=True)
+    pkgs = dm.action.group_show(id=datasetList,include_datasets=True)
     aipkgs = pkgs['packages']
 
     for aipkg in aipkgs:
@@ -71,23 +72,26 @@ if __name__ == '__main__':
         syncDatasets = aiDatasets
 
     for Did,Dname in syncDatasets.items():
-        print(Did,": ",Dname)
+        print("\n{0}".format(Dname))
+        logging.debug("%s: %s\n",Did, Dname)
         datasetDir = dataRootDir+"/"+Dname
         createDir(datasetDir)
         Dpkg = dm.action.package_show(id=Did)
-        #print(Dpkg)
+        logging.debug(Dpkg)
         Dresources = Dpkg['resources']
         for res in Dresources:
-            #print(res)
+            logging.debug(res)
             rUrl = res['url']
             rName = res['name']
             rID = res['id']
             rRevision = res['revision_id']
             cRevision = md.getRevision(rID)
             if cRevision == rRevision and dataSync == True:
-                print(Dname,": ",rName,": ",rUrl,"skip")
+                print("\t", rName," skip")
+                logging.debug("%s: %s: %s, skip", Dname, rName ,rUrl)
             else:
-                print(Dname,": ",rName,": ",rUrl,"downloading")
+                print("\t", "%s downloading", rName)
+                logging.debug("%s: %s: %s, downloading", Dname, rName ,rUrl)
                 resFile = dataRootDir+"/"+Dname+"/"+rName
                 md.cacheRevision(Did, rID, rRevision)
                 downloadFile(rUrl, resFile)
