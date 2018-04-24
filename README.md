@@ -29,10 +29,13 @@ remember to replace key!
     [site]
     url=https://aidm.nchc.org.tw
     key=<<your ckan api key>>
+    [dataset]
+    group=ai
     [local]
     data_root_directory=./datasets
     sync=true
     logfile=sync.log
     statusfile=status.log
     metafile=sync.meta
+    debug=0
 
