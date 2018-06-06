@@ -15,7 +15,8 @@ config.sections()
 config.read('ckan.ini')
 key = config['site']['key']
 url = config['site']['url']
-datasetList = config['dataset']['group']
+gDatasetList = config['dataset']['group']
+oDatasetList = config['dataset']['organization']
 dataRootDir = config['local']['data_root_directory']
 dataSync = config['local'].getboolean('sync')
 logFile = config['local']['logfile']
@@ -30,7 +31,11 @@ logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 dm = RemoteCKAN(url, user_agent=ua, apikey=key)
 
 def retrievePackages():
-    pkgs = dm.action.group_show(id=datasetList,include_datasets=True)
+    if gDatasetList != '':
+        pkgs = dm.action.group_show(id=gDatasetList,include_datasets=True)
+    elif oDatasetList != '': #fixme
+        pkgs = dm.action.organization_show(id=oDatasetList,include_datasets=True)
+
     aipkgs = pkgs['packages']
 
     for aipkg in aipkgs:
