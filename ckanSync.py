@@ -33,7 +33,7 @@ dm = RemoteCKAN(url, user_agent=ua, apikey=key)
 def retrievePackages():
     if gDatasetList != '':
         pkgs = dm.action.group_show(id=gDatasetList,include_datasets=True)
-    elif oDatasetList != '': #fixme
+    elif oDatasetList != '': #fixme, should merge group and organization together
         pkgs = dm.action.organization_show(id=oDatasetList,include_datasets=True)
 
     aipkgs = pkgs['packages']
@@ -54,9 +54,24 @@ def createDir(name):
 
 def downloadFile(url, name):
     try:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('Authorization', key)]
+        urllib.request.install_opener(opener)
         urllib.request.urlretrieve(url, name)
+        return True
     except Exception as e:
         logging.error("Sync %s to %s error.(%s)\n", url, name, str(e))
+        return False
+
+    return False
+
+def checkFile(Dname, rName):
+    DnamePath = dataRootDir+"/"+Dname
+    rNamePath = DnamePath+"/"+rName
+    if os.path.isdir(DnamePath) == True:
+        if os.path.exists(rNamePath):
+            return True
+    return False
 
 if __name__ == '__main__':
 
@@ -91,12 +106,13 @@ if __name__ == '__main__':
             rID = res['id']
             rRevision = res['revision_id']
             cRevision = md.getRevision(rID)
-            if cRevision == rRevision and dataSync == True:
+            fileExist = checkFile(Dname, rName)
+            if cRevision == rRevision and dataSync == True and fileExist == True:
                 print("\t", rName," skip")
                 logging.debug("%s: %s: %s, skip", Dname, rName ,rUrl)
             else:
-                print("\t", "%s downloading", rName)
+                print("\t {0} downloading".format(rName))
                 logging.debug("%s: %s: %s, downloading", Dname, rName ,rUrl)
                 resFile = dataRootDir+"/"+Dname+"/"+rName
-                md.cacheRevision(Did, rID, rRevision)
-                downloadFile(rUrl, resFile)
+                if downloadFile(rUrl, resFile) == True:
+                    md.cacheRevision(Did, rID, rRevision)
