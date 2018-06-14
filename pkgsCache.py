@@ -51,7 +51,7 @@ class packages:
         #c.execute('''CREATE TABLE packages (pkgId text, pkgName text, pkgVid text, pkgUrl text, pkgFileName text)''')
         self.cursor.execute('''CREATE TABLE synccache (pkgID text, resID text, resRevision text, lastUpdateTime REAL DEFAULT ( DATETIME('now', 'localtime')))''')
 
-        self.cursor.execute("INSERT INTO ckansync(ckanSyncVersion,ckanSyncDBVersion) VALUES ('0.1', '0.1')")
+        self.cursor.execute("INSERT INTO ckansync(ckanSyncVersion,ckanSyncDBVersion) VALUES ('0.2', '0.1')")
 
         # Save (commit) the changes
         self.conn.commit()
