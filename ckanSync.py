@@ -30,17 +30,22 @@ logging.basicConfig(filename=logFile,level=logging.DEBUG) ## INFO, WARNING
 
 dm = RemoteCKAN(url, user_agent=ua, apikey=key)
 
-def retrievePackages():
-    if gDatasetList != '':
-        pkgs = dm.action.group_show(id=gDatasetList,include_datasets=True)
-    elif oDatasetList != '': #fixme, should merge group and organization together
-        pkgs = dm.action.organization_show(id=oDatasetList,include_datasets=True)
+def retrievePackages(dataset=''):
+    if dataset == '':
+        if gDatasetList != '':
+            pkgs = dm.action.group_show(id=gDatasetList,include_datasets=True)
+        elif oDatasetList != '': #fixme, should merge group and organization together
+            pkgs = dm.action.organization_show(id=oDatasetList,include_datasets=True)
+        aipkgs = pkgs['packages']
 
-    aipkgs = pkgs['packages']
-
-    for aipkg in aipkgs:
-        dataId = aipkg['id']
-        dataName = aipkg['name']
+        for aipkg in aipkgs:
+            dataId = aipkg['id']
+            dataName = aipkg['name']
+            aiDatasets[dataId] = dataName
+    else:
+        pkg = dm.action.package_show(id=dataset)
+        dataId = pkg['id']
+        dataName = pkg['name']
         aiDatasets[dataId] = dataName
 
 def createDir(name):
@@ -77,11 +82,11 @@ if __name__ == '__main__':
 
     md = pkgsCache.packages(metaData)
     createDir(dataRootDir)
-    retrievePackages()
- 
     pkg = ''
     if len(sys.argv) > 1:
         pkg = sys.argv[1]
+
+    retrievePackages(pkg)
 
     if pkg != '':
         for Did,Dname in aiDatasets.items():
