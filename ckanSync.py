@@ -3,13 +3,11 @@ import sys
 import os, errno
 import urllib
 import urllib.error
-from urllib.error import URLError, HTTPError
 import urllib.request
 import configparser
 import logging
 from ckanapi import RemoteCKAN
 import pkgsCache
-import cgi
 ua = 'ckanapiexample/1.0 (+http://example.com/my/website)'
 
 config = configparser.ConfigParser()
@@ -45,6 +43,7 @@ def retrievePackages(dataset=''):
             dataName = aipkg['name']
             aiDatasets[dataId] = dataName
     else:
+        print(dataset)
         pkg = dm.action.package_show(id=dataset)
         dataId = pkg['id']
         dataName = pkg['name']
@@ -59,28 +58,10 @@ def createDir(name):
                 logging.error("create %s fail.(%s)!\n", name, str(e))
                 raise
 
-def downloadFile(url, rootDir, dataset, resource):
-    opener = urllib.request.build_opener()
-    opener.addheaders = [('Authorization', key)]
-    try: 
-        remotefile = opener.open(url)
-        rfileinfo = remotefile.info()['Content-Disposition']
-        r_value, r_params = cgi.parse_header(rfileinfo)
-    except HTTPError as e:
-        logging.error('The server couldn\'t fulfill the request.')
-        logging.error('Error code: ', e.code)
-        print('Error code: ', e.code)
-        return False
-    except URLError as e:
-        logging.error('We failed to reach a server.')
-        logging.error('Reason: ', e.reason)
-        print('Reason: ', e.reason)
-        return False
-    if "filename" in r_params:
-        resource = r_params["filename"]
-    name = rootDir+"/"+dataset+"/"+resource
-    print("to {}".format(name))
+def downloadFile(url, name):
     try:
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('Authorization', key)]
         urllib.request.install_opener(opener)
         urllib.request.urlretrieve(url, name)
         return True
@@ -136,7 +117,8 @@ if __name__ == '__main__':
                 print("\t", rName," skip")
                 logging.debug("%s: %s: %s, skip", Dname, rName ,rUrl)
             else:
-                print("\t Download {} ".format(rName), end = '')
+                print("\t {0} downloading".format(rName))
                 logging.debug("%s: %s: %s, downloading", Dname, rName ,rUrl)
-                if downloadFile(rUrl, dataRootDir, Dname, rName) == True:
+                resFile = dataRootDir+"/"+Dname+"/"+rName
+                if downloadFile(rUrl, resFile) == True:
                     md.cacheRevision(Did, rID, rRevision)
